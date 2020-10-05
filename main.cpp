@@ -4,6 +4,7 @@
 #include "glm/gtx/string_cast.hpp"
 #include "Physics.hpp"
 #include "AsteroidsGame.hpp"
+#include "stdlib.h"
 
 
 
@@ -34,12 +35,9 @@ public:
                 game.resize(windowInfo.m_width,windowInfo.m_height);
                 m_windowResized = false;
             }
-
             m_renderer->setClearColor({0,0,0,1});
             AsteroidsGame::Frame nextFrame = game.Tick(Input);
             m_renderer->pushGeometry(nextFrame.verts,nextFrame.inds,glm::mat4x4(1));
-//            for(auto & vert : nextFrame.verts )
-//               std::cout<< glm::to_string(vert.position)<<std::endl;
             m_renderer->beginDrawCall();
 
 
@@ -51,7 +49,6 @@ public:
 
    virtual void recieve(const wlo::KeyboardMessage &msg) override{
        if(msg.getInfo().button==wlo::KeyCode::SPACE ) {
-           std::cout<<"pressed space"<<std::endl;
            if (msg.getType() == wlo::MessageType::KeyReleased)
                Input.Space = false;
            else

@@ -10,7 +10,7 @@
 
 
 
-AsteroidsGame::AsteroidsGame(float width, float height): width(width), height(height),AsteroidSpawnTicker(100),idCounter(0){
+AsteroidsGame::AsteroidsGame(float width, float height): width(width), height(height),AsteroidSpawnTicker(300),idCounter(0){
     player.id = idCounter++;
 }
 
@@ -62,16 +62,12 @@ AsteroidsGame::Frame AsteroidsGame::Tick(AsteroidsGame::Input input) {
         spawnBullet(player.phys.position,player.phys.rotation);
     }
 
+    glm::vec2 center = glm::vec2(width/2,height/2);
+    glm::vec2 mousePos =   glm::vec2(input.mouseX,input.mouseY) - center;
+    player.phys.rotation = atan2(mousePos[1]-player.phys.position[1],mousePos[0]-player.phys.position[0])+90;
 
     if(AsteroidSpawnTicker.active())
-       spawnAsteroid(glm::vec2(rand()*width,rand()*height));
-
-
-       glm::vec2 center = glm::vec2(width/2,height/2);
-      glm::vec2 mousePos =   glm::vec2(input.mouseX,input.mouseY) - center;
-      std::cout<<"mouse Local coords" <<glm::to_string(mousePos)<<std::endl;
-      glm::vec2 up = glm::vec2(0,1);
-      player.phys.rotation = -atan2(player.phys.position[1]-mousePos[1],player.phys.position[0]-mousePos[0])-90;
+       spawnAsteroid(glm::vec2(rand()*width/2-width,rand()*height/2-height));
 
      //update tickers
      AsteroidSpawnTicker.tick();
@@ -83,12 +79,12 @@ AsteroidsGame::Frame AsteroidsGame::Tick(AsteroidsGame::Input input) {
     bullet.phys = Physics2D::applyTime(1,bullet.phys);
     for(auto & [idx,asteroid]: asteroids)
         asteroid.phys = Physics2D::applyTime(1,asteroid.phys);
-    //update colliders
 
     //fetch living ids
     std::vector<size_t> bulletIDs; bulletIDs.reserve(bullets.size());
     for(const auto & [id,bullet] :bullets)
         bulletIDs.push_back(id);
+
     std::vector<size_t> asteroidIDs; asteroidIDs.resize(asteroids.size());
     for(const auto & [id,asteroid] :asteroids)
         asteroidIDs.push_back(id);
@@ -98,15 +94,17 @@ AsteroidsGame::Frame AsteroidsGame::Tick(AsteroidsGame::Input input) {
     for(auto & [id,bullet] : bullets)
         bulletColliders[id] = getCollider(bullet);
 
-    std::unordered_map<size_t,Geometry::Box> asteroidColliders; bulletColliders.reserve(bullets.size());
+    std::unordered_map<size_t,Geometry::Box> asteroidColliders; asteroidColliders.reserve(bullets.size());
     for(auto & [id,asteroid] : asteroids)
-        bulletColliders[id] = getCollider(asteroid);
+        asteroidColliders[id] = getCollider(asteroid);
 
     for(const auto & aid : asteroidIDs){
         for(const auto & bid : bulletIDs){
             if(Geometry::intersecting(asteroidColliders[aid],bulletColliders[bid])){
                 asteroids.erase(aid);
+                asteroidColliders.erase(aid);
                 bullets.erase(bid);
+                bulletColliders.erase(bid);
             }
         }
     }
@@ -123,6 +121,7 @@ AsteroidsGame::Frame AsteroidsGame::Tick(AsteroidsGame::Input input) {
             if(Geometry::intersecting(bulletColliders[bid],getCollider(player))){
                 state = GameOver;
                 bullets.erase(bid);
+                bulletColliders.erase(bid);
             }
     }
 
@@ -133,10 +132,10 @@ AsteroidsGame::Frame AsteroidsGame::Tick(AsteroidsGame::Input input) {
 
    //handle non-physical collisions
     constrain(player.phys);
-    for(auto & id: bulletIDs)
-        constrain(bullets[id].phys);
-    for(auto & id : asteroidIDs)
-        constrain(asteroids[id].phys);
+    for(auto & [id,bullet]: bullets)
+        constrain(bullet.phys);
+    for(auto & [id,asteroid] : asteroids)
+        constrain(asteroid.phys);
 
     insertAtEnd(next.verts,getPlayerVerts());
     insertAndOffset(next.inds, player.model[0].getInds(), 0);
@@ -147,7 +146,8 @@ AsteroidsGame::Frame AsteroidsGame::Tick(AsteroidsGame::Input input) {
     for(auto & [idx,bullet] : bullets) {
         insertAndOffset(next.inds, bullet.model[0].getInds(), offset += 4);
     }
-    insertAtEnd(next.verts,getAsteroidsVerts()); for(auto & [idx,asteroid] : asteroids) {
+    insertAtEnd(next.verts,getAsteroidsVerts());
+    for(auto & [idx,asteroid] : asteroids) {
         for (auto &tri : asteroid.model)
             insertAndOffset(next.inds, tri.getInds(), offset += 3);
     }

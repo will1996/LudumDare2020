@@ -85,8 +85,8 @@ private:
 
 
 
-    std::unordered_map<size_t,Asteroid> asteroids;
-    std::unordered_map<size_t,Bullet> bullets;
+    std::map<size_t,Asteroid> asteroids;
+    std::map<size_t,Bullet> bullets;
 
 
 
