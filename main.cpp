@@ -14,7 +14,7 @@ public:
     wlo::Window::Info windowInfo ;
     AsteroidsGame game;
     AsteroidsGame::Input Input;
-    Asteroids():game(800,600){
+    Asteroids(std::string rootPath):Application(rootPath),game(800,600){
        wlo::Application::Info appInfo("Asteroids",0);
         Application::initialize(appInfo);
         m_main_window->permit<wlo::MouseMessage,Asteroids,&Asteroids::recieve>(this);
@@ -108,7 +108,7 @@ public:
 };
 
 
- int main() {
-     Asteroids roids;
+ int main(int argc, char ** argv) {
+     Asteroids roids(argv[0]);
      roids.run();
 }
